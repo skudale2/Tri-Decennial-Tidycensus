@@ -1,0 +1,82 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-11-21"
+---
+
+```{r setup, include=FALSE}
+install.packages("sf")
+library(tidyverse)
+library(tidycensus)
+library(readxl)
+library(ggplot2)
+library(sf)
+library(dplyr)
+```
+ 
+```{r}
+var00 <- load_variables(2000, "pl")
+varhh <- load_variables(2010, "sf1")
+var10 <- load_variables(2010, "pl")
+var20 <- load_variables(2020, "pl")
+varacs20 <- load_variables(2020, "acs5")
+```
+ 
+```{r}
+data00pl <- get_decennial(
+  geography = "block",
+  variables = "PL001001",
+  state = "SC", 
+  county = c("Beaufort", "Jasper"),
+  year = 2000,
+  geometry = TRUE,
+  output = "wide", 
+  sumfile = "pl"
+)
+ 
+data00hh <- get_decennial(
+  geography = "block",
+  variables = "H003001",
+  state = "SC", 
+  county = c("Beaufort", "Jasper"),
+  year = 2000,
+  geometry = TRUE,
+  output = "wide",
+  sumfile = "sf1"
+)
+ 
+data00 <- inner_join(data00pl %>% as.data.frame(), data00hh %>% as.data.frame(), by = "GEOID")
+data00 <- data00 %>% select(c(GEOID, NAME.x, PL001001, H003001, geometry.x))
+data00 <- data00 %>% rename('NAME' = 'NAME.x', 'Pop_2000'= 'PL001001', 'HH_2000'= 'H003001', 'geometry'= 'geometry.x')
+data00 <- data00 %>% st_sf(sf_column_name = 'geometry')
+ 
+ 
+data10 <- get_decennial(
+  geography = "block",
+  variables = c("P001001", "H001001"),
+  state = "SC", 
+  county = c("Beaufort", "Jasper"),
+  year = 2010,
+  geometry = TRUE,
+  output = "wide"
+)
+
+data10 <- data10 %>% rename('Pop_2010'= 'P001001', 'HH_2010'= 'H001001')
+ 
+data20 <- get_decennial(
+  geography = "block",
+  variables = c("P1_001N","H1_001N"),
+  state = "SC", 
+  county = c("Beaufort", "Jasper"),
+  year = 2020,
+  geometry = TRUE,
+  output = "wide"
+)
+
+data20 <- data20 %>% rename('Pop_2020'= 'P1_001N', 'HH_2020'= 'H1_001N')
+ 
+write_sf(data00, "Downloads/data2000.shp")
+write_sf(data10, "Downloads/data2010.shp")
+write_sf(data20, "Downloads/data2020.shp")
+```
+
